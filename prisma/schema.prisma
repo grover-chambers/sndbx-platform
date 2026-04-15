@@ -1,0 +1,408 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  COMPANY_REP
+  CLIENT
+}
+
+enum EngagementStage {
+  MATCHED
+  PROPOSAL
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum SpaceType {
+  OFFICE
+  BOARDROOM
+  MEETING_ROOM
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  role          UserRole  @default(CLIENT)
+  image         String?
+  emailVerified DateTime? @map("email_verified")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  status        String    @default("active")
+
+  companyId     String?   @map("company_id")
+  company       Company?  @relation(fields: [companyId], references: [id])
+  clientProfile Client?
+  accounts      Account[]
+  sessions      Session[]
+  notifications Notification[]
+  createdBookings Booking[] @relation("ClientBookings")
+  invoices      Invoice[]  @relation("UserInvoices")
+  adminMatches  Engagement[] @relation("AdminMatches")
+  reminders     Reminder[]
+  supportTickets SupportTicket[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Company {
+  id               String    @id @default(cuid())
+  name             String
+  slug             String    @unique
+  logo             String?
+  description      String?
+  website          String?
+  fieldOfExpertise String?   @map("field_of_expertise")
+  status           String    @default("PENDING")
+  email            String?
+  phone            String?
+  location         String?
+  foundedYear      String?   @map("founded_year")
+  teamSize         String?   @map("team_size")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  users            User[]
+  services         Service[]
+  documents        CompanyDocument[]
+  engagements      Engagement[]
+  invitations      CompanyInvitation[]
+  teamMembers      TeamMember[]
+
+  @@map("companies")
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  pricing     String?
+  companyId   String   @map("company_id")
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("services")
+}
+
+model CompanyDocument {
+  id         String   @id @default(cuid())
+  title      String
+  url        String
+  type       String
+  companyId  String   @map("company_id")
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  @@map("company_documents")
+}
+
+model CompanyInvitation {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  companyId String   @map("company_id")
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("company_invitations")
+}
+
+model TeamMember {
+  id          String   @id @default(cuid())
+  email       String
+  name        String?
+  role        String   @default("MEMBER")
+  status      String   @default("PENDING")
+  token       String   @unique
+  expiresAt   DateTime @map("expires_at")
+  companyId   String   @map("company_id")
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invitedBy   String   @map("invited_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("team_members")
+}
+
+model Client {
+  id          String    @id @default(cuid())
+  companyName String    @map("company_name")
+  industry    String?
+  size        String?
+  status      String    @default("ACTIVE")
+  userId      String    @unique @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  needs       ClientNeed[]
+  engagements Engagement[]
+  bookings    Booking[]
+  documents   ClientDocument[]
+  invoices    Invoice[]
+
+  @@map("clients")
+}
+
+model ClientNeed {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  budgetRange String?  @map("budget_range")
+  timeline    String?
+  status      String   @default("OPEN")
+  clientId    String   @map("client_id")
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("client_needs")
+}
+
+model ClientDocument {
+  id         String   @id @default(cuid())
+  title      String
+  url        String
+  type       String
+  clientId   String   @map("client_id")
+  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  @@map("client_documents")
+}
+
+model Space {
+  id          String      @id @default(cuid())
+  name        String
+  type        SpaceType
+  capacity    Int
+  description String?
+  images      String[]
+  hourlyRate  Float?      @map("hourly_rate")
+  dailyRate   Float?      @map("daily_rate")
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  bookings    Booking[]
+
+  @@map("spaces")
+}
+
+model Booking {
+  id           String        @id @default(cuid())
+  startTime    DateTime      @map("start_time")
+  endTime      DateTime      @map("end_time")
+  status       BookingStatus @default(PENDING)
+  totalAmount  Float         @map("total_amount")
+  notes        String?
+  checkInTime  DateTime?     @map("check_in_time")
+  checkOutTime DateTime?     @map("check_out_time")
+
+  spaceId      String        @map("space_id")
+  space        Space         @relation(fields: [spaceId], references: [id])
+  clientId     String        @map("client_id")
+  client       Client        @relation(fields: [clientId], references: [id])
+  createdById  String        @map("created_by_id")
+  createdBy    User          @relation("ClientBookings", fields: [createdById], references: [id])
+  invoice      Invoice?
+
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  @@map("bookings")
+}
+
+model Engagement {
+  id          String          @id @default(cuid())
+  stage       EngagementStage @default(MATCHED)
+  dealValue   Float?          @map("deal_value")
+  notes       String?
+  startedAt   DateTime        @default(now()) @map("started_at")
+  completedAt DateTime?       @map("completed_at")
+
+  clientId    String          @map("client_id")
+  client      Client          @relation(fields: [clientId], references: [id])
+  companyId   String          @map("company_id")
+  company     Company         @relation(fields: [companyId], references: [id])
+  matchedBy   String?         @map("matched_by")
+  matcher     User?           @relation("AdminMatches", fields: [matchedBy], references: [id])
+
+  invoices    Invoice[]
+  timeline    EngagementTimeline[]
+
+  @@unique([clientId, companyId])
+  @@map("engagements")
+}
+
+model EngagementTimeline {
+  id           String          @id @default(cuid())
+  stage        EngagementStage
+  note         String?
+  createdAt    DateTime        @default(now()) @map("created_at")
+  engagementId String          @map("engagement_id")
+  engagement   Engagement      @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+
+  @@map("engagement_timeline")
+}
+
+model Invoice {
+  id             String         @id @default(cuid())
+  invoiceNumber  String         @unique @map("invoice_number")
+  amount         Float
+  status         InvoiceStatus  @default(DRAFT)
+  dueDate        DateTime       @map("due_date")
+  paidAt         DateTime?      @map("paid_at")
+  paymentMethod  String?        @map("payment_method")
+  mpesaPaybill   String?        @map("mpesa_paybill")
+  mpesaAccNumber String?        @map("mpesa_acc_number")
+
+  clientId       String         @map("client_id")
+  client         Client         @relation(fields: [clientId], references: [id])
+  userId         String?        @map("user_id")
+  user           User?          @relation("UserInvoices", fields: [userId], references: [id])
+  bookingId      String?        @unique @map("booking_id")
+  booking        Booking?       @relation(fields: [bookingId], references: [id])
+  engagementId   String?        @map("engagement_id")
+  engagement     Engagement?    @relation(fields: [engagementId], references: [id])
+
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  @@map("invoices")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  type      String
+  isRead    Boolean  @default(false) @map("is_read")
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
+
+model Reminder {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  dueDate     DateTime @map("due_date")
+  isCompleted Boolean  @default(false) @map("is_completed")
+  relatedTo   String?  @map("related_to")
+  relatedId   String?  @map("related_id")
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("reminders")
+}
+
+model SupportTicket {
+  id             String         @id @default(cuid())
+  ticketNumber   String         @unique @map("ticket_number")
+  title          String
+  description    String
+  issueType      String         @map("issue_type")
+  priority       String         @default("MEDIUM")
+  status         String         @default("OPEN")
+  userId         String         @map("user_id")
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relatedBookingId String?      @map("related_booking_id")
+  relatedEngagementId String?   @map("related_engagement_id")
+  adminResponse  String?        @map("admin_response")
+  resolvedBy     String?        @map("resolved_by")
+  resolvedAt     DateTime?      @map("resolved_at")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  messages       SupportMessage[]
+
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id          String   @id @default(cuid())
+  content     String
+  isFromAdmin Boolean  @default(false) @map("is_from_admin")
+  ticketId    String   @map("ticket_id")
+  ticket      SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("support_messages")
+}
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
