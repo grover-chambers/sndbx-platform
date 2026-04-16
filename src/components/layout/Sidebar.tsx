@@ -175,19 +175,29 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* Sign Out */}
+        {/* Sign Out - FIXED VERSION */}
         <div className={`p-4 border-t border-white/10 ${isCollapsed ? "text-center" : ""}`}>
           <button
             onClick={handleSignOut}
             disabled={isSigningOut}
             className={`
               flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
-              text-white/70 hover:bg-red-600/20 hover:text-red-400 w-full disabled:opacity-50
+              text-white/70 hover:bg-red-600/20 hover:text-red-400 w-full
               ${isCollapsed ? "justify-center" : ""}
+              ${isSigningOut ? "opacity-50 cursor-not-allowed" : ""}
             `}
           >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
-            {!isCollapsed && <span className="text-sm font-medium">{isSigningOut ? "Signing out..." : "Sign Out"}</span>}
+            {isSigningOut ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-red-400 rounded-full animate-spin" />
+                {!isCollapsed && <span className="text-sm font-medium">Signing out...</span>}
+              </>
+            ) : (
+              <>
+                <LogOut className="w-5 h-5 flex-shrink-0" />
+                {!isCollapsed && <span className="text-sm font-medium">Sign Out</span>}
+              </>
+            )}
           </button>
         </div>
       </aside>
