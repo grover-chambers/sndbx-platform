@@ -430,15 +430,6 @@ model CompanyVerification {
   @@map("company_verifications")
 }
 
-model SystemSetting {
-  id          String   @id @default(cuid())
-  key         String   @unique
-  value       String
-  description String?
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@map("system_settings")
-}
 
 model NeedsAssessment {
   id                String   @id @default(cuid())
@@ -554,12 +545,3 @@ model CompanyVerification {
   @@map("company_verifications")
 }
 
-model SystemSetting {
-  id          String   @id @default(cuid())
-  key         String   @unique
-  value       String
-  description String?
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@map("system_settings")
-}
