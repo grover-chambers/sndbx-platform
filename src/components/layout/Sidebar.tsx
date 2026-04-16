@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import {
   LayoutDashboard,
   Building2,
@@ -24,6 +24,7 @@ export function Sidebar() {
   const { data: session } = useSession()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
 
   const userRole = session?.user?.role || "CLIENT"
 
@@ -68,6 +69,19 @@ export function Sidebar() {
   const handleLinkClick = () => {
     if (window.innerWidth < 768) {
       setIsMobileOpen(false)
+    }
+  }
+  
+  const handleSignOut = async () => {
+    setIsSigningOut(true)
+    try {
+      await signOut({ 
+        callbackUrl: '/auth/login',  // Redirect to login page after sign out
+        redirect: true 
+      })
+    } catch (error) {
+      console.error('Sign out error:', error)
+      setIsSigningOut(false)
     }
   }
 
@@ -164,15 +178,16 @@ export function Sidebar() {
         {/* Sign Out */}
         <div className={`p-4 border-t border-white/10 ${isCollapsed ? "text-center" : ""}`}>
           <button
-            onClick={() => window.location.href = "/api/auth/signout"}
+            onClick={handleSignOut}
+            disabled={isSigningOut}
             className={`
               flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
-              text-white/70 hover:bg-red-600/20 hover:text-red-400 w-full
+              text-white/70 hover:bg-red-600/20 hover:text-red-400 w-full disabled:opacity-50
               ${isCollapsed ? "justify-center" : ""}
             `}
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
-            {!isCollapsed && <span className="text-sm font-medium">Sign Out</span>}
+            {!isCollapsed && <span className="text-sm font-medium">{isSigningOut ? "Signing out..." : "Sign Out"}</span>}
           </button>
         </div>
       </aside>
