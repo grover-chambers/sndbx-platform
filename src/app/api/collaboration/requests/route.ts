@@ -22,8 +22,7 @@ export async function GET() {
     const sentRequests = await prisma.collaborationRequest.findMany({
       where: { senderId: user.company.id },
       include: {
-        receiver: { select: { id: true, name: true, fieldOfExpertise: true, logo: true } },
-        client: { select: { companyName: true } }
+        receiver: { select: { id: true, name: true, fieldOfExpertise: true, logo: true } }
       },
       orderBy: { createdAt: "desc" }
     })
@@ -31,8 +30,7 @@ export async function GET() {
     const receivedRequests = await prisma.collaborationRequest.findMany({
       where: { receiverId: user.company.id },
       include: {
-        sender: { select: { id: true, name: true, fieldOfExpertise: true, logo: true } },
-        client: { select: { companyName: true } }
+        sender: { select: { id: true, name: true, fieldOfExpertise: true, logo: true } }
       },
       orderBy: { createdAt: "desc" }
     })
@@ -47,7 +45,6 @@ export async function GET() {
       include: {
         sender: { select: { id: true, name: true, fieldOfExpertise: true, logo: true } },
         receiver: { select: { id: true, name: true, fieldOfExpertise: true, logo: true } },
-        client: { select: { companyName: true } },
         messages: { orderBy: { createdAt: "desc" }, take: 1 },
         tasks: { where: { status: { not: "COMPLETED" } } }
       },
@@ -74,7 +71,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { receiverId, message, projectScope, timeline, clientId } = body
+    const { receiverId, message, projectScope, timeline } = body
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -120,7 +117,6 @@ export async function POST(req: NextRequest) {
         message,
         projectScope,
         timeline,
-        clientId: clientId || undefined,
         status,
         expiresAt
       },
