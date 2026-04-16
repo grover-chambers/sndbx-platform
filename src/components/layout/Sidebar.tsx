@@ -18,9 +18,11 @@ import {
   MessageSquare,
   HelpCircle
 } from "lucide-react"
+import { useRouter } from "next/router"
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { data: session } = useSession()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
@@ -73,17 +75,18 @@ export function Sidebar() {
   }
   
   const handleSignOut = async () => {
-    setIsSigningOut(true)
-    try {
-      await signOut({ 
-        callbackUrl: '/auth/login',  // Redirect to login page after sign out
-        redirect: true 
-      })
-    } catch (error) {
-      console.error('Sign out error:', error)
-      setIsSigningOut(false)
-    }
+  setIsSigningOut(true)
+  try {
+    const data = await signOut({ 
+      redirect: false,
+      callbackUrl: '/auth/login'
+    })
+    router.push('/auth/login')
+  } catch (error) {
+    console.error('Sign out error:', error)
+    setIsSigningOut(false)
   }
+}
 
   return (
     <>
