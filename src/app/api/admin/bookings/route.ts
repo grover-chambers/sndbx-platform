@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get all bookings for calendar view with complete data
-    let calendarBookings = []
+    let calendarBookings: any[] = []
     if (view === "calendar") {
       const start = startDate ? new Date(startDate) : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
       const end = endDate ? new Date(endDate) : new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get bookings with pagination for list view
-    let listBookings = []
+    let listBookings: any[] = []
     let total = 0
     if (view === "list") {
       listBookings = await prisma.booking.findMany({

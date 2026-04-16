@@ -16,7 +16,7 @@ export async function GET() {
     let engagements = 0
     let bookings = 0
     let activeMatches = 0
-    let recentActivities = []
+    let recentActivities: any[] = []
 
     if (session.user.role === "ADMIN" || session.user.role === "SUPER_ADMIN") {
       companies = await prisma.company.count()
@@ -29,7 +29,7 @@ export async function GET() {
       // Get recent engagements for admin
       const recentEngagements = await prisma.engagement.findMany({
         take: 5,
-        orderBy: { createdAt: "desc" },
+        orderBy: { startedAt: "desc" },
         include: {
           client: { select: { companyName: true } },
           company: { select: { name: true } }
@@ -40,7 +40,7 @@ export async function GET() {
         id: e.id,
         type: "engagement",
         title: `New engagement: ${e.client.companyName} matched with ${e.company.name}`,
-        timestamp: e.createdAt.toLocaleDateString()
+        timestamp: e.startedAt.toLocaleDateString()
       }))
     } else if (session.user.role === "COMPANY_REP") {
       const user = await prisma.user.findUnique({

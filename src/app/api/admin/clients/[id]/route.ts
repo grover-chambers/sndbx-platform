@@ -17,7 +17,7 @@ export async function GET(
       user: { select: { name: true, email: true, createdAt: true } },
       engagements: {
         take: 10,
-        orderBy: { createdAt: "desc" },
+        orderBy: { startedAt: "desc" },
         include: { company: { select: { name: true } } }
       },
       _count: { select: { engagements: true, bookings: true } }

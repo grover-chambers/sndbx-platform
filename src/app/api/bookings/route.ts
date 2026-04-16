@@ -151,7 +151,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    let bookings = []
+    let bookings: any[] = []
 
     if (session.user.role === "ADMIN" || session.user.role === "SUPER_ADMIN") {
       bookings = await prisma.booking.findMany({

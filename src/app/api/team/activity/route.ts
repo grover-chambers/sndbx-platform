@@ -21,11 +21,7 @@ export async function GET() {
     // Get team members
     const teamMembers = await prisma.teamMember.findMany({
       where: { companyId: user.company.id, status: "ACTIVE" },
-      include: {
-        user: {
-          select: { name: true, email: true, image: true }
-        }
-      }
+
     })
 
     // Mock activity data (would come from an activity log table)

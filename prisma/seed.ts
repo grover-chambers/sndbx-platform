@@ -250,7 +250,7 @@ async function main() {
         createdById: admin.id,
         startTime: startDate,
         endTime: endDate,
-        totalAmount: space.hourlyRate * Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)),
+        totalAmount: (space.hourlyRate ?? 0) * Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)),
         status: status as any,
         notes: `Booking for ${client.companyName} team meeting`,
       }

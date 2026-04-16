@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const page = parseInt(searchParams.get("page") || "1")
   const limit = 20
 
-  const where = { ...(status && { status }) }
+  const where = { ...(status && { status: status as any }) }
 
   const [invoices, total] = await Promise.all([
     prisma.invoice.findMany({

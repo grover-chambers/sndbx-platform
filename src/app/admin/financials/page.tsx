@@ -115,7 +115,7 @@ export default function FinancialPage() {
               setEditingInvoice(null)
               setShowInvoiceModal(true)
             }}
-            onEditInvoice={(invoice) => {
+            onEditInvoice={(invoice: any) => {
               setEditingInvoice(invoice)
               setShowInvoiceModal(true)
             }}
@@ -124,7 +124,7 @@ export default function FinancialPage() {
         {activeTab === "mpesa" && (
           <MpesaManagement 
             formatCurrency={formatCurrency}
-            onVerifyTransaction={(transaction) => {
+            onVerifyTransaction={(transaction: any) => {
               setSelectedTransaction(transaction)
               setShowMpesaModal(true)
             }}
@@ -136,7 +136,7 @@ export default function FinancialPage() {
         {activeTab === "payouts" && (
           <PayoutManagement 
             formatCurrency={formatCurrency}
-            onProcessPayout={(company) => {
+            onProcessPayout={(company: any) => {
               setSelectedCompany(company)
               setShowPayoutModal(true)
             }}

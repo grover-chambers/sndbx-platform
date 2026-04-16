@@ -11,7 +11,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    let engagements = []
+    let engagements: any[] = []
 
     if (session.user.role === "ADMIN" || session.user.role === "SUPER_ADMIN") {
       // Admins see all engagements
