@@ -1,4 +1,10 @@
 {
+  "buildCommand": "npm run build",
+  "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
-  "installCommand": "npm install --legacy-peer-deps"
+  "outputDirectory": ".next",
+  "env": {
+    "NEXTAUTH_URL": "https://sndbx-platform.vercel.app",
+    "NEXTAUTH_SECRET": "sndbx-platform-secret-key-2024"
+  }
 }
