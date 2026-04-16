@@ -68,6 +68,7 @@ model User {
   adminMatches  Engagement[] @relation("AdminMatches")
   reminders     Reminder[]
   supportTickets SupportTicket[]
+  collabMessages CollaborationMessage[] @relation("CollabMessages")
 
   @@map("users")
 }
@@ -132,7 +133,9 @@ model Company {
   documents        CompanyDocument[]
   engagements      Engagement[]
   invitations      CompanyInvitation[]
-  teamMembers      TeamMember[]
+  teamMembers           TeamMember[]
+  sentCollaborations     CollaborationRequest[] @relation("SentCollaborations")
+  receivedCollaborations CollaborationRequest[] @relation("ReceivedCollaborations")
 
   @@map("companies")
 }
@@ -201,6 +204,7 @@ model Client {
   userId      String    @unique @map("user_id")
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   needs       ClientNeed[]
+  needsAssessment NeedsAssessment?
   engagements Engagement[]
   bookings    Booking[]
   documents   ClientDocument[]
@@ -407,4 +411,51 @@ model SystemSetting {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("system_settings")
+}
+
+model NeedsAssessment {
+  id                String   @id @default(cuid())
+  clientId          String   @unique @map("client_id")
+  client            Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  industry          String?
+  companySize       String?  @map("company_size")
+  revenueRange      String?  @map("revenue_range")
+  serviceTypes      String[] @map("service_types")
+  budgetRange       String?  @map("budget_range")
+  timeline          String?
+  engagementType    String?  @map("engagement_type")
+  locationPref      String?  @map("location_pref")
+  additionalContext String?  @map("additional_context")
+  isComplete        Boolean  @default(false) @map("is_complete")
+  isFirstSubmission Boolean  @default(true) @map("is_first_submission")
+  submittedAt       DateTime? @map("submitted_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  @@map("needs_assessments")
+}
+
+model CollaborationRequest {
+  id         String   @id @default(cuid())
+  senderId   String   @map("sender_id")
+  receiverId String   @map("receiver_id")
+  sender     Company  @relation("SentCollaborations", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   Company  @relation("ReceivedCollaborations", fields: [receiverId], references: [id], onDelete: Cascade)
+  status     String   @default("PENDING")
+  message    String?
+  messages   CollaborationMessage[]
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  @@unique([senderId, receiverId])
+  @@map("collaboration_requests")
+}
+
+model CollaborationMessage {
+  id              String               @id @default(cuid())
+  collaborationId String               @map("collaboration_id")
+  collaboration   CollaborationRequest @relation(fields: [collaborationId], references: [id], onDelete: Cascade)
+  senderId        String               @map("sender_id")
+  sender          User                 @relation("CollabMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  content         String
+  createdAt       DateTime             @default(now()) @map("created_at")
+  @@map("collaboration_messages")
 }
