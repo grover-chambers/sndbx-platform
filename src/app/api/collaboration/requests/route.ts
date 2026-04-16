@@ -35,27 +35,10 @@ export async function GET() {
       orderBy: { createdAt: "desc" }
     })
 
-    const activeCollaborations = await prisma.collaborationRequest.findMany({
-      where: {
-        OR: [
-          { senderId: user.company.id, status: "ACCEPTED" },
-          { receiverId: user.company.id, status: "ACCEPTED" }
-        ]
-      },
-      include: {
-        sender: { select: { id: true, name: true, fieldOfExpertise: true, logo: true } },
-        receiver: { select: { id: true, name: true, fieldOfExpertise: true, logo: true } },
-        messages: { orderBy: { createdAt: "desc" }, take: 1 },
-        tasks: { where: { status: { not: "COMPLETED" } } }
-      },
-      orderBy: { updatedAt: "desc" }
-    })
-
     return NextResponse.json({
       success: true,
       sentRequests,
-      receivedRequests,
-      activeCollaborations
+      receivedRequests
     })
   } catch (error) {
     console.error("Error fetching collaboration requests:", error)
@@ -71,7 +54,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { receiverId, message, projectScope, timeline } = body
+    const { receiverId, message } = body
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -103,22 +86,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Receiver not found" }, { status: 404 })
     }
 
-    // Auto-approve if same expertise
-    const isSameExpertise = user.company.fieldOfExpertise === receiver.fieldOfExpertise
-    const status = isSameExpertise ? "ACCEPTED" : "PENDING"
-
-    const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + 14)
-
     const request = await prisma.collaborationRequest.create({
       data: {
         senderId: user.company.id,
         receiverId,
-        message,
-        projectScope,
-        timeline,
-        status,
-        expiresAt
+        message
       },
       include: {
         sender: true,
@@ -132,43 +104,14 @@ export async function POST(req: NextRequest) {
       await prisma.notification.create({
         data: {
           userId: receiverUser.id,
-          title: isSameExpertise ? "New Collaboration Request" : "New Collaboration Request (Pending Approval)",
-          message: `${user.company.name} wants to collaborate with you on: ${projectScope || "a project"}`,
+          title: "New Collaboration Request",
+          message: `${user.company.name} wants to collaborate with you`,
           type: "COLLABORATION_REQUEST"
         }
       })
     }
 
-    // If auto-approved, create initial milestone
-    if (isSameExpertise) {
-      await prisma.collaborationMilestone.create({
-        data: {
-          collaborationId: request.id,
-          title: "Project Kickoff",
-          description: "Initial meeting to discuss project details",
-          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-        }
-      })
-    }
-
-    // Notify admin if different expertise
-    if (!isSameExpertise) {
-      const admins = await prisma.user.findMany({
-        where: { role: { in: ["SUPER_ADMIN", "ADMIN"] } }
-      })
-      if (admins.length > 0) {
-        await prisma.notification.createMany({
-          data: admins.map(admin => ({
-            userId: admin.id,
-            title: "Collaboration Request Needs Approval",
-            message: `${user.company.name} (${user.company.fieldOfExpertise}) wants to collaborate with ${receiver.name} (${receiver.fieldOfExpertise})`,
-            type: "COLLABORATION_APPROVAL"
-          }))
-        })
-      }
-    }
-
-    return NextResponse.json({ success: true, request, autoApproved: isSameExpertise })
+    return NextResponse.json({ success: true, request })
   } catch (error) {
     console.error("Error creating collaboration request:", error)
     return NextResponse.json({ error: "Failed to create request" }, { status: 500 })

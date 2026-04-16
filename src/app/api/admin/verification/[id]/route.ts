@@ -16,7 +16,7 @@ export async function PUT(
     const body = await req.json()
     const { status, interviewDate, interviewLocation, interviewType, rejectionReason } = body
 
-    // Update verification record
+    // Update verification record - using the correct model name
     await prisma.companyVerification.update({
       where: { companyId: params.id },
       data: {
@@ -43,14 +43,16 @@ export async function PUT(
         include: { users: true }
       })
 
-      await prisma.notification.createMany({
-        data: company!.users.map(user => ({
-          userId: user.id,
-          title: "Company Approved!",
-          message: "Your company has been approved. You can now access all platform features.",
-          type: "COMPANY_APPROVED",
-        }))
-      })
+      if (company && company.users.length > 0) {
+        await prisma.notification.createMany({
+          data: company.users.map(user => ({
+            userId: user.id,
+            title: "Company Approved!",
+            message: "Your company has been approved. You can now access all platform features.",
+            type: "COMPANY_APPROVED",
+          }))
+        })
+      }
     }
 
     // If interview scheduled, notify company
@@ -60,14 +62,16 @@ export async function PUT(
         include: { users: true }
       })
 
-      await prisma.notification.createMany({
-        data: company!.users.map(user => ({
-          userId: user.id,
-          title: "Interview Scheduled",
-          message: `Your verification interview has been scheduled for ${new Date(interviewDate).toLocaleString()}. Location: ${interviewLocation}`,
-          type: "INTERVIEW_SCHEDULED",
-        }))
-      })
+      if (company && company.users.length > 0) {
+        await prisma.notification.createMany({
+          data: company.users.map(user => ({
+            userId: user.id,
+            title: "Interview Scheduled",
+            message: `Your verification interview has been scheduled for ${new Date(interviewDate).toLocaleString()}. Location: ${interviewLocation}`,
+            type: "INTERVIEW_SCHEDULED",
+          }))
+        })
+      }
     }
 
     return NextResponse.json({ success: true })

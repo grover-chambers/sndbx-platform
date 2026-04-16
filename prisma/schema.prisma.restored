@@ -54,8 +54,8 @@ model User {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   status        String    @default("active")
-  resetToken     String?   @unique @map("reset_token")
-  resetTokenExpiry DateTime? @map("reset_token_expiry")
+  resetToken        String?   @map("reset_token")
+  resetTokenExpiry  DateTime? @map("reset_token_expiry")
 
   companyId     String?   @map("company_id")
   company       Company?  @relation(fields: [companyId], references: [id])
@@ -127,20 +127,19 @@ model Company {
   teamSize         String?   @map("team_size")
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
-  inviteToken      String?   @unique
-  invitedBy        String?   @map("invited_by")
-  invitedAt        DateTime? @map("invited_at")
 
   users            User[]
   services         Service[]
   documents        CompanyDocument[]
   engagements      Engagement[]
   invitations      CompanyInvitation[]
-  teamMembers      TeamMember[]
-  verification     CompanyVerification?
+  teamMembers           TeamMember[]
+  verification         CompanyVerification?
+  inviteToken          String?   @unique
+  invitedBy            String?   @map("invited_by")
+  invitedAt            DateTime? @map("invited_at")
   sentCollaborations     CollaborationRequest[] @relation("SentCollaborations")
   receivedCollaborations CollaborationRequest[] @relation("ReceivedCollaborations")
-  assignedTasks    CollaborationTask[] @relation("AssignedTasks")
 
   @@map("companies")
 }
@@ -200,29 +199,6 @@ model TeamMember {
   @@map("team_members")
 }
 
-model CompanyVerification {
-  id                String   @id @default(cuid())
-  companyId         String   @unique @map("company_id")
-  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  businessCertUrl   String?  @map("business_cert_url")
-  taxComplianceUrl  String?  @map("tax_compliance_url")
-  professionalLicenseUrl String? @map("professional_license_url")
-  insuranceUrl      String?  @map("insurance_url")
-  portfolioUrls     String[] @map("portfolio_urls")
-  verificationStatus String  @default("PENDING")
-  interviewDate     DateTime? @map("interview_date")
-  interviewLocation String?   @map("interview_location")
-  interviewNotes    String?   @map("interview_notes")
-  interviewType     String?   @map("interview_type")
-  reviewedBy        String?   @map("reviewed_by")
-  reviewedAt        DateTime? @map("reviewed_at")
-  rejectionReason   String?   @map("rejection_reason")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-
-  @@map("company_verifications")
-}
-
 model Client {
   id          String    @id @default(cuid())
   companyName String    @map("company_name")
@@ -232,11 +208,11 @@ model Client {
   userId      String    @unique @map("user_id")
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   needs       ClientNeed[]
+  needsAssessment NeedsAssessment?
   engagements Engagement[]
   bookings    Booking[]
   documents   ClientDocument[]
   invoices    Invoice[]
-  needsAssessment NeedsAssessment?
 
   @@map("clients")
 }
@@ -266,28 +242,6 @@ model ClientDocument {
   uploadedAt DateTime @default(now()) @map("uploaded_at")
 
   @@map("client_documents")
-}
-
-model NeedsAssessment {
-  id                String   @id @default(cuid())
-  clientId          String   @unique @map("client_id")
-  client            Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  industry          String?
-  companySize       String?  @map("company_size")
-  revenueRange      String?  @map("revenue_range")
-  serviceTypes      String[] @map("service_types")
-  budgetRange       String?  @map("budget_range")
-  timeline          String?
-  engagementType    String?  @map("engagement_type")
-  locationPref      String?  @map("location_pref")
-  additionalContext String?  @map("additional_context")
-  isComplete        Boolean  @default(false) @map("is_complete")
-  isFirstSubmission Boolean  @default(true) @map("is_first_submission")
-  submittedAt       DateTime? @map("submitted_at")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-
-  @@map("needs_assessments")
 }
 
 model Space {
@@ -453,6 +407,61 @@ model SupportMessage {
   @@map("support_messages")
 }
 
+model CompanyVerification {
+  id                String   @id @default(cuid())
+  companyId         String   @unique @map("company_id")
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  businessCertUrl   String?  @map("business_cert_url")
+  taxComplianceUrl  String?  @map("tax_compliance_url")
+  professionalLicenseUrl String? @map("professional_license_url")
+  insuranceUrl      String?  @map("insurance_url")
+  portfolioUrls     String[] @map("portfolio_urls")
+  verificationStatus String  @default("PENDING")
+  interviewDate     DateTime? @map("interview_date")
+  interviewLocation String?   @map("interview_location")
+  interviewNotes    String?   @map("interview_notes")
+  interviewType     String?   @map("interview_type")
+  reviewedBy        String?   @map("reviewed_by")
+  reviewedAt        DateTime? @map("reviewed_at")
+  rejectionReason   String?   @map("rejection_reason")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("company_verifications")
+}
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+model NeedsAssessment {
+  id                String   @id @default(cuid())
+  clientId          String   @unique @map("client_id")
+  client            Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  industry          String?
+  companySize       String?  @map("company_size")
+  revenueRange      String?  @map("revenue_range")
+  serviceTypes      String[] @map("service_types")
+  budgetRange       String?  @map("budget_range")
+  timeline          String?
+  engagementType    String?  @map("engagement_type")
+  locationPref      String?  @map("location_pref")
+  additionalContext String?  @map("additional_context")
+  isComplete        Boolean  @default(false) @map("is_complete")
+  isFirstSubmission Boolean  @default(true) @map("is_first_submission")
+  submittedAt       DateTime? @map("submitted_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  @@map("needs_assessments")
+}
+
+
 model CollaborationRequest {
   id          String   @id @default(cuid())
   senderId    String   @map("sender_id")
@@ -520,6 +529,29 @@ model CollaborationMilestone {
   createdAt       DateTime           @default(now()) @map("created_at")
   
   @@map("collaboration_milestones")
+}
+
+model CompanyVerification {
+  id                String   @id @default(cuid())
+  companyId         String   @unique @map("company_id")
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  businessCertUrl   String?  @map("business_cert_url")
+  taxComplianceUrl  String?  @map("tax_compliance_url")
+  professionalLicenseUrl String? @map("professional_license_url")
+  insuranceUrl      String?  @map("insurance_url")
+  portfolioUrls     String[] @map("portfolio_urls")
+  verificationStatus String  @default("PENDING")
+  interviewDate     DateTime? @map("interview_date")
+  interviewLocation String?   @map("interview_location")
+  interviewNotes    String?   @map("interview_notes")
+  interviewType     String?   @map("interview_type")
+  reviewedBy        String?   @map("reviewed_by")
+  reviewedAt        DateTime? @map("reviewed_at")
+  rejectionReason   String?   @map("rejection_reason")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("company_verifications")
 }
 
 model SystemSetting {
