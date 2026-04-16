@@ -54,7 +54,7 @@ model User {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   status        String    @default("active")
-  resetToken     String?   @unique @map("reset_token")
+  resetToken    String?   @unique @map("reset_token")
   resetTokenExpiry DateTime? @map("reset_token_expiry")
 
   companyId     String?   @map("company_id")
@@ -237,6 +237,7 @@ model Client {
   documents   ClientDocument[]
   invoices    Invoice[]
   needsAssessment NeedsAssessment?
+  collaborationRequests CollaborationRequest[]
 
   @@map("clients")
 }
@@ -349,6 +350,7 @@ model Engagement {
 
   invoices    Invoice[]
   timeline    EngagementTimeline[]
+  collaborationRequests CollaborationRequest[] @relation("EngagementCollaborations")
 
   @@unique([clientId, companyId])
   @@map("engagements")
@@ -466,6 +468,8 @@ model CollaborationRequest {
   clientId    String?  @map("client_id")
   client      Client?  @relation(fields: [clientId], references: [id])
   expiresAt   DateTime? @map("expires_at")
+  engagementId String? @map("engagement_id")
+  engagement   Engagement? @relation("EngagementCollaborations", fields: [engagementId], references: [id])
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
   
