@@ -7,6 +7,12 @@ import { Building2, Upload, FileText, CheckCircle, XCircle, Loader2, ArrowRight,
 
 type Step = "account" | "profile" | "documents" | "services" | "review"
 
+interface Service {
+  title: string
+  description: string
+  pricing: string
+}
+
 export default function CompanyRegistrationPage() {
   const router = useRouter()
   const [step, setStep] = useState<Step>("account")
@@ -34,14 +40,6 @@ export default function CompanyRegistrationPage() {
   })
   
   // Documents (Cloudinary uploads)
-  const [documents, setDocuments] = useState({
-    businessCert: null as File | null,
-    taxCompliance: null as File | null,
-    professionalLicense: null as File | null,
-    insurance: null as File | null,
-    portfolio: [] as File[]
-  })
-  
   const [uploading, setUploading] = useState(false)
   const [uploadedUrls, setUploadedUrls] = useState({
     businessCertUrl: "",
@@ -52,7 +50,7 @@ export default function CompanyRegistrationPage() {
   })
   
   // Services
-  const [services, setServices] = useState([{ title: "", description: "", pricing: "" }])
+  const [services, setServices] = useState<Service[]>([{ title: "", description: "", pricing: "" }])
   
   const expertiseOptions = [
     "IT & Development", "Design & Creative", "Marketing & PR",
@@ -70,21 +68,25 @@ export default function CompanyRegistrationPage() {
       body: formData
     })
     
+    if (!res.ok) {
+      throw new Error("Upload failed")
+    }
+    
     const data = await res.json()
     return data.url
   }
 
-  const handleFileUpload = async (file: File | null, type: keyof typeof documents) => {
+  const handleFileUpload = async (file: File | null, type: keyof typeof uploadedUrls) => {
     if (!file) return
     
     setUploading(true)
     try {
-      const url = await uploadFile(file, type)
+      const url = await uploadFile(file, type as string)
       
-      if (type === "businessCert") setUploadedUrls(prev => ({ ...prev, businessCertUrl: url }))
-      else if (type === "taxCompliance") setUploadedUrls(prev => ({ ...prev, taxComplianceUrl: url }))
-      else if (type === "professionalLicense") setUploadedUrls(prev => ({ ...prev, professionalLicenseUrl: url }))
-      else if (type === "insurance") setUploadedUrls(prev => ({ ...prev, insuranceUrl: url }))
+      if (type === "businessCertUrl") setUploadedUrls(prev => ({ ...prev, businessCertUrl: url }))
+      else if (type === "taxComplianceUrl") setUploadedUrls(prev => ({ ...prev, taxComplianceUrl: url }))
+      else if (type === "professionalLicenseUrl") setUploadedUrls(prev => ({ ...prev, professionalLicenseUrl: url }))
+      else if (type === "insuranceUrl") setUploadedUrls(prev => ({ ...prev, insuranceUrl: url }))
       
     } catch (error) {
       console.error("Upload failed:", error)
@@ -150,11 +152,14 @@ export default function CompanyRegistrationPage() {
     }
   }
 
-  const updateService = (index: number, field: string, value: string) => {
+  const updateService = (index: number, field: keyof Service, value: string) => {
     const updated = [...services]
     updated[index] = { ...updated[index], [field]: value }
     setServices(updated)
   }
+
+  const stepOrder: Step[] = ["account", "profile", "documents", "services", "review"]
+  const currentIndex = stepOrder.indexOf(step)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-teal-50/20 py-12">
@@ -162,9 +167,7 @@ export default function CompanyRegistrationPage() {
         {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            {["account", "profile", "documents", "services", "review"].map((s, i) => {
-              const stepOrder = ["account", "profile", "documents", "services", "review"]
-              const currentIndex = stepOrder.indexOf(step)
+            {stepOrder.map((s, i) => {
               const isComplete = currentIndex > i
               const isActive = currentIndex === i
               
@@ -284,7 +287,7 @@ export default function CompanyRegistrationPage() {
                   value={profile.name}
                   onChange={(e) => {
                     setProfile({ ...profile, name: e.target.value })
-                    setProfile({ ...profile, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-") })
+                    setProfile(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-") }))
                   }}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   required
@@ -388,22 +391,21 @@ export default function CompanyRegistrationPage() {
           </div>
         )}
 
-        {/* Step 3: Verification Documents */}
+        {/* Step 3: Documents - Simplified for now */}
         {step === "documents" && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
             <h2 className="text-2xl font-semibold text-navy-900 mb-2">Verification Documents</h2>
             <p className="text-slate-500 mb-6">Upload required documents for verification</p>
             
-            <div className="space-y-6">
-              <div className="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center">
+            <div className="space-y-4">
+              <div className="border-2 border-dashed border-slate-200 rounded-lg p-4 text-center">
                 <input
                   type="file"
                   id="businessCert"
                   accept=".pdf,.jpg,.png"
                   onChange={(e) => {
                     if (e.target.files?.[0]) {
-                      setDocuments({ ...documents, businessCert: e.target.files[0] })
-                      handleFileUpload(e.target.files[0], "businessCert")
+                      handleFileUpload(e.target.files[0], "businessCertUrl")
                     }
                   }}
                   className="hidden"
@@ -418,23 +420,22 @@ export default function CompanyRegistrationPage() {
                     ) : (
                       <>
                         <Upload className="w-12 h-12 text-slate-400 mb-2" />
-                        <p className="text-sm font-medium text-slate-700">Business Registration Certificate</p>
-                        <p className="text-xs text-slate-400 mt-1">PDF, JPG, or PNG (max 5MB)</p>
+                        <p className="text-sm font-medium text-slate-700">Business Registration Certificate *</p>
+                        <p className="text-xs text-slate-400 mt-1">PDF, JPG, or PNG (max 10MB)</p>
                       </>
                     )}
                   </div>
                 </label>
               </div>
               
-              <div className="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center">
+              <div className="border-2 border-dashed border-slate-200 rounded-lg p-4 text-center">
                 <input
                   type="file"
                   id="taxCompliance"
                   accept=".pdf,.jpg,.png"
                   onChange={(e) => {
                     if (e.target.files?.[0]) {
-                      setDocuments({ ...documents, taxCompliance: e.target.files[0] })
-                      handleFileUpload(e.target.files[0], "taxCompliance")
+                      handleFileUpload(e.target.files[0], "taxComplianceUrl")
                     }
                   }}
                   className="hidden"
@@ -449,65 +450,9 @@ export default function CompanyRegistrationPage() {
                     ) : (
                       <>
                         <FileText className="w-12 h-12 text-slate-400 mb-2" />
-                        <p className="text-sm font-medium text-slate-700">Tax Compliance Certificate</p>
+                        <p className="text-sm font-medium text-slate-700">Tax Compliance Certificate *</p>
                         <p className="text-xs text-slate-400 mt-1">Required for verification</p>
                       </>
-                    )}
-                  </div>
-                </label>
-              </div>
-              
-              <div className="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center">
-                <input
-                  type="file"
-                  id="professionalLicense"
-                  accept=".pdf,.jpg,.png"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      setDocuments({ ...documents, professionalLicense: e.target.files[0] })
-                      handleFileUpload(e.target.files[0], "professionalLicense")
-                    }
-                  }}
-                  className="hidden"
-                />
-                <label htmlFor="professionalLicense" className="cursor-pointer">
-                  <div className="flex flex-col items-center">
-                    {uploadedUrls.professionalLicenseUrl ? (
-                      <>
-                        <CheckCircle className="w-12 h-12 text-green-500 mb-2" />
-                        <p className="text-sm text-green-600">Professional License uploaded</p>
-                      </>
-                    ) : (
-                      <>
-                        <FileText className="w-12 h-12 text-slate-400 mb-2" />
-                        <p className="text-sm font-medium text-slate-700">Professional License (Optional)</p>
-                        <p className="text-xs text-slate-400 mt-1">If applicable</p>
-                      </>
-                    )}
-                  </div>
-                </label>
-              </div>
-              
-              <div className="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center">
-                <input
-                  type="file"
-                  id="portfolio"
-                  multiple
-                  accept="image/*,.pdf"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files.length > 0) {
-                      handlePortfolioUpload(e.target.files)
-                    }
-                  }}
-                  className="hidden"
-                />
-                <label htmlFor="portfolio" className="cursor-pointer">
-                  <div className="flex flex-col items-center">
-                    <Upload className="w-12 h-12 text-slate-400 mb-2" />
-                    <p className="text-sm font-medium text-slate-700">Portfolio / Work Samples</p>
-                    <p className="text-xs text-slate-400 mt-1">Upload examples of your work</p>
-                    {uploadedUrls.portfolioUrls.length > 0 && (
-                      <p className="text-xs text-green-600 mt-2">{uploadedUrls.portfolioUrls.length} files uploaded</p>
                     )}
                   </div>
                 </label>
@@ -634,7 +579,6 @@ export default function CompanyRegistrationPage() {
                 <p className="text-sm"><span className="text-slate-500">Name:</span> {profile.name}</p>
                 <p className="text-sm"><span className="text-slate-500">Expertise:</span> {profile.fieldOfExpertise}</p>
                 <p className="text-sm"><span className="text-slate-500">Location:</span> {profile.location || "Not specified"}</p>
-                <p className="text-sm"><span className="text-slate-500">Website:</span> {profile.website || "Not specified"}</p>
               </div>
               
               <div className="bg-slate-50 p-4 rounded-lg">

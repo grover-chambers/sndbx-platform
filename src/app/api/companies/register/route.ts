@@ -2,10 +2,47 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 
+interface Account {
+  name: string
+  email: string
+  password: string
+  confirmPassword: string
+}
+
+interface Profile {
+  name: string
+  slug: string
+  website: string
+  description: string
+  fieldOfExpertise: string
+  phone: string
+  location: string
+  teamSize: string
+}
+
+interface Documents {
+  businessCertUrl: string
+  taxComplianceUrl: string
+  professionalLicenseUrl: string
+  insuranceUrl: string
+  portfolioUrls: string[]
+}
+
+interface Service {
+  title: string
+  description: string
+  pricing: string
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { account, profile, documents, services } = body
+    const { account, profile, documents, services } = body as {
+      account: Account
+      profile: Profile
+      documents: Documents
+      services: Service[]
+    }
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -67,7 +104,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Create services
-    for (const service of services.filter((s: any) => s.title)) {
+    for (const service of services.filter(s => s.title)) {
       await prisma.service.create({
         data: {
           title: service.title,
@@ -83,14 +120,16 @@ export async function POST(req: NextRequest) {
       where: { role: { in: ["SUPER_ADMIN", "ADMIN"] } }
     })
 
-    await prisma.notification.createMany({
-      data: admins.map(admin => ({
-        userId: admin.id,
-        title: "New Company Registration",
-        message: `${company.name} has registered and is pending verification.`,
-        type: "COMPANY_REGISTRATION",
-      }))
-    })
+    if (admins.length > 0) {
+      await prisma.notification.createMany({
+        data: admins.map(admin => ({
+          userId: admin.id,
+          title: "New Company Registration",
+          message: `${company.name} has registered and is pending verification.`,
+          type: "COMPANY_REGISTRATION",
+        }))
+      })
+    }
 
     return NextResponse.json({ success: true, companyId: company.id })
   } catch (error) {
