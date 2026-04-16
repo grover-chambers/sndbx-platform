@@ -134,6 +134,10 @@ model Company {
   engagements      Engagement[]
   invitations      CompanyInvitation[]
   teamMembers           TeamMember[]
+  verification         CompanyVerification?
+  inviteToken          String?   @unique
+  invitedBy            String?   @map("invited_by")
+  invitedAt            DateTime? @map("invited_at")
   sentCollaborations     CollaborationRequest[] @relation("SentCollaborations")
   receivedCollaborations CollaborationRequest[] @relation("ReceivedCollaborations")
 
@@ -458,4 +462,36 @@ model CollaborationMessage {
   content         String
   createdAt       DateTime             @default(now()) @map("created_at")
   @@map("collaboration_messages")
+}
+
+model CompanyVerification {
+  id                String   @id @default(cuid())
+  companyId         String   @unique @map("company_id")
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  // Documents (Cloudinary URLs)
+  businessCertUrl   String?  @map("business_cert_url")
+  taxComplianceUrl  String?  @map("tax_compliance_url")
+  professionalLicenseUrl String? @map("professional_license_url")
+  insuranceUrl      String?  @map("insurance_url")
+  portfolioUrls     String[] @map("portfolio_urls")
+  
+  // Verification Status
+  verificationStatus String  @default("PENDING") // PENDING, DOCUMENTS_SUBMITTED, INTERVIEW_SCHEDULED, INTERVIEW_COMPLETED, APPROVED, REJECTED
+  
+  // Interview Details
+  interviewDate     DateTime? @map("interview_date")
+  interviewLocation String?   @map("interview_location")
+  interviewNotes    String?   @map("interview_notes")
+  interviewType     String?   @map("interview_type") // IN_PERSON, VIDEO
+  
+  // Admin Actions
+  reviewedBy        String?   @map("reviewed_by")
+  reviewedAt        DateTime? @map("reviewed_at")
+  rejectionReason   String?   @map("rejection_reason")
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("company_verifications")
 }

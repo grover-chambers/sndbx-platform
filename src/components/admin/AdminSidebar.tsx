@@ -20,6 +20,7 @@ import {
 const navItems = [
   { label: "Overview", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Companies", href: "/admin/companies", icon: Building2 },
+  { label: "Verification", href: "/admin/verification", icon: ShieldCheck },
   { label: "Clients", href: "/admin/clients", icon: Users },
   { label: "Matching", href: "/admin/matching", icon: Target },
   { label: "Engagements", href: "/admin/engagements", icon: Handshake },
