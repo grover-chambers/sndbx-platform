@@ -1,6 +1,10 @@
 {
-  "buildCommand": "NODE_OPTIONS='--max_old_space_size=4096' next build",
-  "installCommand": "npm install --legacy-peer-deps --no-package-lock",
+  "buildCommand": "npm install --legacy-peer-deps && npm run build",
+  "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "env": {
+    "NEXTAUTH_URL": "https://sndbx-platform.vercel.app",
+    "NEXTAUTH_SECRET": "sndbx-platform-secret-key-2024"
+  }
 }
