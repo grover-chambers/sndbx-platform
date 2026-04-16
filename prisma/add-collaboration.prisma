@@ -1,0 +1,70 @@
+// Add these models to your schema if they don't exist
+
+model CollaborationRequest {
+  id          String   @id @default(cuid())
+  senderId    String   @map("sender_id")
+  receiverId  String   @map("receiver_id")
+  sender      Company  @relation("SentCollaborations", fields: [senderId], references: [id])
+  receiver    Company  @relation("ReceivedCollaborations", fields: [receiverId], references: [id])
+  status      String   @default("PENDING")
+  message     String?
+  projectScope String? @map("project_scope")
+  timeline    String?
+  clientId    String?  @map("client_id")
+  client      Client?  @relation(fields: [clientId], references: [id])
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  messages    CollaborationMessage[]
+  tasks       CollaborationTask[]
+  milestones  CollaborationMilestone[]
+  
+  @@map("collaboration_requests")
+}
+
+model CollaborationMessage {
+  id              String             @id @default(cuid())
+  collaborationId String             @map("collaboration_id")
+  collaboration   CollaborationRequest @relation(fields: [collaborationId], references: [id], onDelete: Cascade)
+  senderId        String             @map("sender_id")
+  sender          User               @relation("CollabMessages", fields: [senderId], references: [id])
+  content         String
+  attachments     String[]
+  isRead          Boolean            @default(false)
+  createdAt       DateTime           @default(now()) @map("created_at")
+  
+  @@map("collaboration_messages")
+}
+
+model CollaborationTask {
+  id              String             @id @default(cuid())
+  collaborationId String             @map("collaboration_id")
+  collaboration   CollaborationRequest @relation(fields: [collaborationId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  assignedToId    String?            @map("assigned_to_id")
+  assignedTo      Company?           @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  status          String             @default("PENDING")
+  progress        Int                @default(0)
+  dueDate         DateTime?          @map("due_date")
+  completedAt     DateTime?          @map("completed_at")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  
+  @@map("collaboration_tasks")
+}
+
+model CollaborationMilestone {
+  id              String             @id @default(cuid())
+  collaborationId String             @map("collaboration_id")
+  collaboration   CollaborationRequest @relation(fields: [collaborationId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  dueDate         DateTime?          @map("due_date")
+  isCompleted     Boolean            @default(false)
+  completedAt     DateTime?          @map("completed_at")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  
+  @@map("collaboration_milestones")
+}

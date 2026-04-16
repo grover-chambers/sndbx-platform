@@ -407,6 +407,29 @@ model SupportMessage {
   @@map("support_messages")
 }
 
+model CompanyVerification {
+  id                String   @id @default(cuid())
+  companyId         String   @unique @map("company_id")
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  businessCertUrl   String?  @map("business_cert_url")
+  taxComplianceUrl  String?  @map("tax_compliance_url")
+  professionalLicenseUrl String? @map("professional_license_url")
+  insuranceUrl      String?  @map("insurance_url")
+  portfolioUrls     String[] @map("portfolio_urls")
+  verificationStatus String  @default("PENDING")
+  interviewDate     DateTime? @map("interview_date")
+  interviewLocation String?   @map("interview_location")
+  interviewNotes    String?   @map("interview_notes")
+  interviewType     String?   @map("interview_type")
+  reviewedBy        String?   @map("reviewed_by")
+  reviewedAt        DateTime? @map("reviewed_at")
+  rejectionReason   String?   @map("rejection_reason")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("company_verifications")
+}
+
 model SystemSetting {
   id          String   @id @default(cuid())
   key         String   @unique
@@ -438,60 +461,105 @@ model NeedsAssessment {
   @@map("needs_assessments")
 }
 
+
 model CollaborationRequest {
-  id         String   @id @default(cuid())
-  senderId   String   @map("sender_id")
-  receiverId String   @map("receiver_id")
-  sender     Company  @relation("SentCollaborations", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver   Company  @relation("ReceivedCollaborations", fields: [receiverId], references: [id], onDelete: Cascade)
-  status     String   @default("PENDING")
-  message    String?
-  messages   CollaborationMessage[]
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-  @@unique([senderId, receiverId])
+  id          String   @id @default(cuid())
+  senderId    String   @map("sender_id")
+  receiverId  String   @map("receiver_id")
+  sender      Company  @relation("SentCollaborations", fields: [senderId], references: [id])
+  receiver    Company  @relation("ReceivedCollaborations", fields: [receiverId], references: [id])
+  status      String   @default("PENDING")
+  message     String?
+  projectScope String? @map("project_scope")
+  timeline    String?
+  clientId    String?  @map("client_id")
+  client      Client?  @relation(fields: [clientId], references: [id])
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  messages    CollaborationMessage[]
+  tasks       CollaborationTask[]
+  milestones  CollaborationMilestone[]
+  
   @@map("collaboration_requests")
 }
 
 model CollaborationMessage {
-  id              String               @id @default(cuid())
-  collaborationId String               @map("collaboration_id")
+  id              String             @id @default(cuid())
+  collaborationId String             @map("collaboration_id")
   collaboration   CollaborationRequest @relation(fields: [collaborationId], references: [id], onDelete: Cascade)
-  senderId        String               @map("sender_id")
-  sender          User                 @relation("CollabMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId        String             @map("sender_id")
+  sender          User               @relation("CollabMessages", fields: [senderId], references: [id])
   content         String
-  createdAt       DateTime             @default(now()) @map("created_at")
+  attachments     String[]
+  isRead          Boolean            @default(false)
+  createdAt       DateTime           @default(now()) @map("created_at")
+  
   @@map("collaboration_messages")
+}
+
+model CollaborationTask {
+  id              String             @id @default(cuid())
+  collaborationId String             @map("collaboration_id")
+  collaboration   CollaborationRequest @relation(fields: [collaborationId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  assignedToId    String?            @map("assigned_to_id")
+  assignedTo      Company?           @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  status          String             @default("PENDING")
+  progress        Int                @default(0)
+  dueDate         DateTime?          @map("due_date")
+  completedAt     DateTime?          @map("completed_at")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  
+  @@map("collaboration_tasks")
+}
+
+model CollaborationMilestone {
+  id              String             @id @default(cuid())
+  collaborationId String             @map("collaboration_id")
+  collaboration   CollaborationRequest @relation(fields: [collaborationId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  dueDate         DateTime?          @map("due_date")
+  isCompleted     Boolean            @default(false)
+  completedAt     DateTime?          @map("completed_at")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  
+  @@map("collaboration_milestones")
 }
 
 model CompanyVerification {
   id                String   @id @default(cuid())
   companyId         String   @unique @map("company_id")
   company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
-  // Documents (Cloudinary URLs)
   businessCertUrl   String?  @map("business_cert_url")
   taxComplianceUrl  String?  @map("tax_compliance_url")
   professionalLicenseUrl String? @map("professional_license_url")
   insuranceUrl      String?  @map("insurance_url")
   portfolioUrls     String[] @map("portfolio_urls")
-  
-  // Verification Status
-  verificationStatus String  @default("PENDING") // PENDING, DOCUMENTS_SUBMITTED, INTERVIEW_SCHEDULED, INTERVIEW_COMPLETED, APPROVED, REJECTED
-  
-  // Interview Details
+  verificationStatus String  @default("PENDING")
   interviewDate     DateTime? @map("interview_date")
   interviewLocation String?   @map("interview_location")
   interviewNotes    String?   @map("interview_notes")
-  interviewType     String?   @map("interview_type") // IN_PERSON, VIDEO
-  
-  // Admin Actions
+  interviewType     String?   @map("interview_type")
   reviewedBy        String?   @map("reviewed_by")
   reviewedAt        DateTime? @map("reviewed_at")
   rejectionReason   String?   @map("rejection_reason")
-  
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
   @@map("company_verifications")
+}
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
 }
