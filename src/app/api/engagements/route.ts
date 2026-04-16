@@ -14,7 +14,6 @@ export async function GET() {
     let engagements: any[] = []
 
     if (session.user.role === "ADMIN" || session.user.role === "SUPER_ADMIN") {
-      // Admins see all engagements
       engagements = await prisma.engagement.findMany({
         include: {
           client: {
@@ -31,7 +30,6 @@ export async function GET() {
         orderBy: { startedAt: "desc" }
       })
     } else if (session.user.role === "COMPANY_REP") {
-      // Company reps see engagements for their company
       const user = await prisma.user.findUnique({
         where: { id: session.user.id },
         include: { company: true }
@@ -56,7 +54,6 @@ export async function GET() {
         })
       }
     } else if (session.user.role === "CLIENT") {
-      // Clients see their own engagements
       const client = await prisma.client.findUnique({
         where: { userId: session.user.id }
       })

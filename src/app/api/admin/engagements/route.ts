@@ -16,7 +16,6 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1")
     const limit = 20
 
-    // Build where clause
     const where: any = {}
     if (stage) where.stage = stage
     if (search) {
@@ -26,7 +25,6 @@ export async function GET(req: NextRequest) {
       ]
     }
 
-    // Get engagements with pagination
     const [engagements, total] = await Promise.all([
       prisma.engagement.findMany({
         where,
@@ -69,7 +67,6 @@ async function getAnalytics() {
       .filter(s => ["MATCHED", "PROPOSAL", "ACTIVE"].includes(s.stage))
       .reduce((sum, s) => sum + s._count, 0)
     
-    // Stalled engagements - using startedAt (older than 14 days and not completed)
     const fourteenDaysAgo = new Date()
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14)
     
@@ -86,7 +83,6 @@ async function getAnalytics() {
     })
     const totalValue = totalValueAgg._sum.dealValue || 0
     
-    // Monthly trend data using startedAt
     const sixMonthsAgo = new Date()
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5)
     sixMonthsAgo.setDate(1)
@@ -107,7 +103,6 @@ async function getAnalytics() {
       if (eng.stage === "COMPLETED") monthlyTrend[monthKey].completed++
     })
     
-    // Top companies
     const topCompanies = await prisma.company.findMany({
       take: 5,
       include: {
@@ -124,7 +119,6 @@ async function getAnalytics() {
       completedEngagements: c.engagements.length
     }))
     
-    // Top clients
     const topClients = await prisma.client.findMany({
       take: 5,
       include: {
@@ -139,14 +133,6 @@ async function getAnalytics() {
       totalEngagements: c.engagements.length
     }))
     
-    // Stage durations (simplified)
-    const stageDurations: Record<string, number> = {
-      MATCHED: 5,
-      PROPOSAL: 7,
-      ACTIVE: 14,
-      COMPLETED: 30
-    }
-    
     return {
       total,
       active,
@@ -155,7 +141,7 @@ async function getAnalytics() {
       stalled,
       totalValue,
       byStage: byStage.map(s => ({ stage: s.stage, count: s._count })),
-      stageDurations,
+      stageDurations: {},
       monthlyTrend: Object.values(monthlyTrend),
       topCompanies: topCompaniesData,
       topClients: topClientsData

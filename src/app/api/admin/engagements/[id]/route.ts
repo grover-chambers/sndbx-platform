@@ -51,7 +51,6 @@ export async function PUT(
 
     const { stage, notes, dealValue } = await req.json()
 
-    // Get current engagement
     const current = await prisma.engagement.findUnique({
       where: { id: params.id }
     })
@@ -60,7 +59,6 @@ export async function PUT(
       return NextResponse.json({ error: "Engagement not found" }, { status: 404 })
     }
 
-    // Update engagement
     const engagement = await prisma.engagement.update({
       where: { id: params.id },
       data: {
@@ -71,7 +69,6 @@ export async function PUT(
       }
     })
 
-    // Add timeline entry if stage changed
     if (stage && stage !== current.stage) {
       await prisma.engagementTimeline.create({
         data: {
@@ -82,7 +79,6 @@ export async function PUT(
       })
     }
 
-    // Add note if provided and different
     if (notes && notes !== current.notes) {
       await prisma.engagementTimeline.create({
         data: {
