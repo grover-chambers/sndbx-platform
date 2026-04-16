@@ -1,8 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { signOut } from "next-auth/react"
+import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
   Building2,
@@ -14,13 +13,15 @@ import {
   HelpCircle,
   Settings,
   ShieldCheck,
-  LogOut
+  LogOut,
+  FileCheck
 } from "lucide-react"
+import { signOut } from "next-auth/react"
 
 const navItems = [
   { label: "Overview", href: "/admin/dashboard", icon: LayoutDashboard },
+  { label: "Verification", href: "/admin/verification", icon: FileCheck },
   { label: "Companies", href: "/admin/companies", icon: Building2 },
-  { label: "Verification", href: "/admin/verification", icon: ShieldCheck },
   { label: "Clients", href: "/admin/clients", icon: Users },
   { label: "Matching", href: "/admin/matching", icon: Target },
   { label: "Engagements", href: "/admin/engagements", icon: Handshake },
@@ -32,21 +33,14 @@ const navItems = [
 
 export function AdminSidebar() {
   const pathname = usePathname()
-  const router = useRouter()
 
-  const handleLogout = async () => {
-    try {
-      await signOut({ 
-        redirect: true,
-        callbackUrl: "/"
-      })
-    } catch (error) {
-      router.push("/")
-    }
+  const handleLogout = () => {
+    window.location.href = "/api/auth/signout"
   }
 
   return (
     <aside className="w-64 min-h-screen bg-gradient-to-b from-navy-900 to-navy-800 flex flex-col">
+      {/* Logo */}
       <div className="px-6 py-5 border-b border-white/10">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-teal-400" />
@@ -55,6 +49,7 @@ export function AdminSidebar() {
         <p className="text-white/40 text-xs mt-1">SNDBX Platform</p>
       </div>
 
+      {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map(({ label, href, icon: Icon }) => {
           const isActive = pathname === href || pathname?.startsWith(href + "/")
@@ -75,6 +70,7 @@ export function AdminSidebar() {
         })}
       </nav>
 
+      {/* Sign Out */}
       <div className="px-3 py-4 border-t border-white/10">
         <button
           onClick={handleLogout}
