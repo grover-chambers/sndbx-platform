@@ -44,7 +44,8 @@ export async function GET() {
     if (validMatches.length > 0) {
       const totalDays = validMatches.reduce((sum, e) => {
         const matchDate = e.timeline[0].createdAt
-        const days = Math.ceil((matchDate.getTime() - e.createdAt.getTime()) / (1000 * 60 * 60 * 24))
+        // Use startedAt instead of createdAt
+        const days = Math.ceil((matchDate.getTime() - e.startedAt.getTime()) / (1000 * 60 * 60 * 24))
         return sum + days
       }, 0)
       avgTimeToMatch = Math.round(totalDays / validMatches.length)
