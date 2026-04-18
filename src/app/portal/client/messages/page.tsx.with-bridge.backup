@@ -234,5 +234,3 @@ export default function ClientMessagesPage() {
     </div>
   )
 }
-
-// 💡 Render engagement CTAs: {matchedEngagements?.map(eng => <EngagementChatCTA key={eng.id} engagement={eng} />)}

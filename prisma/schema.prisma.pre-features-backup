@@ -605,7 +605,7 @@ model EngagementMessage {
   reviewedAt      DateTime? @map("reviewed_at")
   rejectionReason String?   @map("rejection_reason")
 
-    attachments           String[]             // Cloudinary public IDs or URLs
+  attachments     String[]
   parentMessageId String?  @map("parent_message_id")
   isReadByClient  Boolean  @default(false) @map("is_read_by_client")
   isReadByCompany Boolean  @default(false) @map("is_read_by_company")
@@ -633,27 +633,4 @@ model SupervisionEvent {
 
   @@index([engagementId, createdAt])
   @@map("supervision_events")
-}
-
-model EngagementAttachment {
-  id              String   @id @default(cuid())
-  messageId       String   @map("message_id")
-  message         EngagementMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  
-  // Cloudinary metadata
-  publicId        String   @map("public_id")
-  originalName    String   @map("original_name")
-  mimeType        String   @map("mime_type")
-  fileSize        Int      @map("file_size") // in bytes
-  secureUrl       String   @map("secure_url")
-  
-  // Admin review
-  reviewedBy      String?  @map("reviewed_by")
-  reviewedAt      DateTime? @map("reviewed_at")
-  isApproved      Boolean  @default(false) @map("is_approved")
-  
-  createdAt       DateTime @default(now()) @map("created_at")
-  
-  @@index([messageId])
-  @@map("engagement_attachments")
 }
