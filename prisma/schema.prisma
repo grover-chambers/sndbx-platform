@@ -606,6 +606,7 @@ model EngagementMessage {
   rejectionReason String?   @map("rejection_reason")
 
     attachments           String[]             // Cloudinary public IDs or URLs
+  attachmentFiles       EngagementAttachment[]
   parentMessageId String?  @map("parent_message_id")
   isReadByClient  Boolean  @default(false) @map("is_read_by_client")
   isReadByCompany Boolean  @default(false) @map("is_read_by_company")
