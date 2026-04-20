@@ -14,7 +14,7 @@ const reviewSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { engagementId: string; messageId: string } }
+  { params }: { params: { id: string; messageId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -22,7 +22,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { engagementId, messageId } = params;
+    const { id, messageId } = params;
     const body = await request.json();
     const validated = reviewSchema.parse(body);
 
@@ -50,7 +50,7 @@ export async function POST(
     });
 
     // Trigger real-time notification if using SSE/WebSocket (optional)
-    // await notifyParticipants(engagementId, 'MESSAGE_REVIEWED', { messageId, action: validated.action });
+    // await notifyParticipants(id, 'MESSAGE_REVIEWED', { messageId, action: validated.action });
 
     return NextResponse.json({ 
       success: true, 

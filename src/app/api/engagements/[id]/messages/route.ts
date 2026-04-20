@@ -13,7 +13,7 @@ const messageSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { engagementId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -21,12 +21,12 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { engagementId } = params;
+    const { id } = params;
     const body = await request.json();
     const validated = messageSchema.parse(body);
 
     const engagement = await prisma.engagement.findUnique({
-      where: { id: engagementId },
+      where: { id: id },
       include: { 
         client: { include: { user: true }}, 
         company: { include: { users: true }},
@@ -47,7 +47,7 @@ export async function POST(
     }
 
     const { message, requiresReview } = await EngagementSupervisionService.sendMessage({
-      engagementId,
+      id,
       senderId: session.user.id,
       content: validated.content,
       messageType: validated.messageType,
@@ -74,7 +74,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { engagementId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -82,11 +82,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { engagementId } = params;
+    const { id } = params;
     const { cursor, limit } = Object.fromEntries(request.nextUrl.searchParams);
 
     const engagement = await prisma.engagement.findUnique({
-      where: { id: engagementId },
+      where: { id: id },
       include: { client: { include: { user: true }}, company: { include: { users: true }}},
     });
 
@@ -103,7 +103,7 @@ export async function GET(
     }
 
     const messages = await EngagementSupervisionService.getMessagesForUser({
-      engagementId,
+      id,
       userId: session.user.id,
       userRole: session.user.role,
       limit: limit ? parseInt(limit) : 50,
@@ -112,12 +112,12 @@ export async function GET(
 
     if (isClient) {
       await prisma.engagementMessage.updateMany({
-        where: { engagementId, isReadByClient: false, senderId: { not: session.user.id }},
+        where: { id, isReadByClient: false, senderId: { not: session.user.id }},
         data: { isReadByClient: true },
       });
     } else if (isCompanyRep) {
       await prisma.engagementMessage.updateMany({
-        where: { engagementId, isReadByCompany: false, senderId: { not: session.user.id }},
+        where: { id, isReadByCompany: false, senderId: { not: session.user.id }},
         data: { isReadByCompany: true },
       });
     }

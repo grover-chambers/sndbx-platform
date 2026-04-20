@@ -38,7 +38,7 @@ export function SupervisedChat({
   // Fetch messages on mount and poll for updates
   const fetchMessages = async () => {
     try {
-      const res = await fetch(`/api/engagements/${engagementId}/messages`);
+      const res = await fetch(`/api/engagements/${id}/messages`);
       if (res.ok) {
         const data = await res.json();
         setMessages(data.messages);
@@ -66,7 +66,7 @@ export function SupervisedChat({
 
     setIsSending(true);
     try {
-      const res = await fetch(`/api/engagements/${engagementId}/messages`, {
+      const res = await fetch(`/api/engagements/${id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

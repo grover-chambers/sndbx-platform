@@ -13,7 +13,7 @@ const initSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { engagementId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -21,13 +21,13 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { engagementId } = params;
+    const { id } = params;
     const body = await request.json();
     const validated = initSchema.parse(body);
 
     // Check if supervision already exists
     const existing = await prisma.engagementSupervision.findUnique({
-      where: { engagementId }
+      where: { engagementId: id }
     });
 
     if (existing) {
@@ -38,12 +38,12 @@ export async function POST(
       });
     }
 
-    const result = await EngagementSupervisionService.initializeSupervision(engagementId, validated.adminUserId);
+    const result = await EngagementSupervisionService.initializeSupervision(id, validated.adminUserId);
 
     // Update with custom settings if provided
     if (validated.escalationKeywords.length > 0 || validated.autoApproveThreshold) {
       await prisma.engagementSupervision.update({
-        where: { engagementId },
+        where: { engagementId: id },
         data: {
           escalationKeywords: validated.escalationKeywords,
           autoApproveThreshold: validated.autoApproveThreshold,

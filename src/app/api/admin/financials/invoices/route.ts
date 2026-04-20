@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const body = await req.json()
-  const { clientId, amount, dueDate, lineItems, type, engagementId, bookingId, notes } = body
+  const { clientId, amount, dueDate, lineItems, type, id, bookingId, notes, engagementId } = body
 
   const invoice = await prisma.invoice.create({
     data: {
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       dueDate: new Date(dueDate),
       status: "SENT",
       userId: session.user.id,
-      ...(engagementId && { engagementId }),
+      ...(engagementId && { engagementId: id }),
       ...(bookingId && { bookingId }),
     },
   })
