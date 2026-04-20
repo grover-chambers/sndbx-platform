@@ -28,7 +28,7 @@ export async function POST(
 
     // Verify message belongs to this engagement
     const message = await prisma.engagementMessage.findUnique({
-      where: { id: messageId, engagementId },
+      where: { id: messageId, engagementId: id },
       include: { engagement: { include: { supervision: true }}}
     });
 

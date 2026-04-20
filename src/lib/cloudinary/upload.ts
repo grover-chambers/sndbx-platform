@@ -36,7 +36,7 @@ export async function uploadFile(
       uploadOptions.allowed_formats = allowedFormats;
     }
     
-    const uploadHandler = (error: Error, result: UploadApiResponse) => {
+    const uploadHandler = (error: any, result: any) => {
       if (error) reject(error);
       else resolve(result);
     };

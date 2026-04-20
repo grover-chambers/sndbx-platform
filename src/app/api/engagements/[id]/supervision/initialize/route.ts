@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { EngagementSupervisionService } from '@/lib/services/engagement-supervision.service';
 import { z } from 'zod';
+import { prisma } from '@/lib/prisma';
 
 const initSchema = z.object({
   adminUserId: z.string(),

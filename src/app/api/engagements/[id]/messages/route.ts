@@ -47,7 +47,7 @@ export async function POST(
     }
 
     const { message, requiresReview } = await EngagementSupervisionService.sendMessage({
-      id,
+      engagementId: id,
       senderId: session.user.id,
       content: validated.content,
       messageType: validated.messageType,
@@ -103,7 +103,7 @@ export async function GET(
     }
 
     const messages = await EngagementSupervisionService.getMessagesForUser({
-      id,
+      engagementId: id,
       userId: session.user.id,
       userRole: session.user.role,
       limit: limit ? parseInt(limit) : 50,
