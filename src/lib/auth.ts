@@ -1,22 +1,10 @@
 import { NextAuthOptions } from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
-import GitHubProvider from "next-auth/providers/github"
 import CredentialsProvider from "next-auth/providers/credentials"
-
-import { prisma } from "./prisma"
+import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 
 export const authOptions: NextAuthOptions = {
-
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-    }),
-    GitHubProvider({
-      clientId: process.env.GITHUB_CLIENT_ID || "",
-      clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
-    }),
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -24,32 +12,49 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Invalid credentials")
-        }
+        try {
+          console.log("Auth attempt for:", credentials?.email)
+          
+          if (!credentials?.email || !credentials?.password) {
+            console.log("Missing credentials")
+            throw new Error("Invalid credentials")
+          }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        })
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+            include: { company: true, clientProfile: true }
+          })
 
-        if (!user || !user.password) {
-          throw new Error("Invalid credentials")
-        }
+          if (!user) {
+            console.log("User not found:", credentials.email)
+            throw new Error("Invalid credentials")
+          }
 
-        const isCorrectPassword = await bcrypt.compare(
-          credentials.password,
-          user.password
-        )
+          if (!user.password) {
+            console.log("User has no password set:", credentials.email)
+            throw new Error("Invalid credentials")
+          }
 
-        if (!isCorrectPassword) {
-          throw new Error("Invalid credentials")
-        }
+          const isValid = await bcrypt.compare(credentials.password, user.password)
+          
+          if (!isValid) {
+            console.log("Invalid password for:", credentials.email)
+            throw new Error("Invalid credentials")
+          }
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
+          console.log("Auth successful for:", credentials.email, "Role:", user.role)
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            companyId: user.companyId,
+            clientId: user.clientProfile?.id
+          }
+        } catch (error) {
+          console.error("Auth error:", error)
+          throw error
         }
       }
     })
@@ -59,6 +64,8 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         token.role = user.role
+        token.companyId = user.companyId
+        token.clientId = user.clientId
       }
       return token
     },
@@ -66,27 +73,39 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string
         session.user.role = token.role as string
+        session.user.companyId = token.companyId as string
+        session.user.clientId = token.clientId as string
       }
       return session
     }
   },
   pages: {
     signIn: "/auth/login",
+    error: "/auth/login",
   },
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,
   },
   secret: process.env.NEXTAUTH_SECRET,
-  cookies: {
-    csrfToken: {
-      name: "next-auth.csrf-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: true
-      }
+  debug: true, // Enable debug for now
+}
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string
+      email: string
+      name?: string | null
+      role: string
+      companyId?: string | null
+      clientId?: string | null
     }
-  },
-  debug: true,
+  }
+  
+  interface User {
+    role: string
+    companyId?: string | null
+    clientId?: string | null
+  }
 }
